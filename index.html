@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Personal Hub</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 0; }
+    header { text-align: center; padding: 25px; background: #1e293b; user-select: none; }
+    header h1 { cursor: pointer; display: inline-block; color: #38bdf8; margin: 0; }
+    .container { max-width: 900px; margin: 20px auto; padding: 0 15px; }
+    .card { background: #1e293b; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; }
+    .item-box { background: #334155; padding: 10px; border-radius: 6px; text-align: center; }
+    .item-box img, .item-box video { width: 100%; height: 140px; object-fit: cover; border-radius: 4px; }
+    .hidden { display: none !important; }
+    .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+    .modal-content { background: #1e293b; padding: 30px; border-radius: 8px; text-align: center; width: 300px; }
+    input, select { width: 100%; padding: 10px; margin: 8px 0; border-radius: 4px; border: 1px solid #475569; background: #0f172a; color: #fff; box-sizing: border-box; }
+    button { padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 5px; }
+    button:hover { background: #1d4ed8; }
+    .error { color: #ef4444; font-size: 0.9rem; margin-top: 5px; }
+    .admin-section { border: 2px dashed #3b82f6; }
+  </style>
+</head>
+<body>
+
+  <!-- Header with Triple-Click Secret Trigger -->
+  <header>
+    <h1 id="secret-trigger">My Personal Hub</h1>
+    <p>Photos, Videos & Apps Collection</p>
+  </header>
+
+  <main class="container">
+    <!-- Public Section: Photos -->
+    <div class="card">
+      <h2>📸 Public Photos</h2>
+      <div id="public-photos" class="grid">Loading...</div>
+    </div>
+
+    <!-- Public Section: Videos -->
+    <div class="card">
+      <h2>🎬 Public Videos</h2>
+      <div id="public-videos" class="grid">Loading...</div>
+    </div>
+
+    <!-- Public Section: Apps & Docs -->
+    <div class="card">
+      <h2>📱 Apps & Documents</h2>
+      <div id="public-apps" class="grid">Loading...</div>
+    </div>
+  </main>
+
+  <!-- Password Modal (Hidden by default) -->
+  <div id="pass-modal" class="modal hidden">
+    <div class="modal-content">
+      <h3>🔒 Secret Vault</h3>
+      <p style="font-size: 0.85rem; color: #94a3b8;">Enter Passcode to Unlock</p>
+      <input type="password" id="pass-input" placeholder="Passcode">
+      <button onclick="checkPassword()">Unlock</button>
+      <button onclick="closeModal()" style="background: #475569; margin-top: 10px;">Cancel</button>
+      <p id="pass-error" class="error"></p>
+    </div>
+  </div>
+
+  <!-- Hidden Secret Vault (18+) -->
+  <div id="secret-vault" class="container hidden">
+    <div class="card admin-section">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h2 style="color: #f43f5e;">🔥 Secret Vault (18+) & Admin Panel</h2>
+        <button onclick="lockVault()" style="width: auto; background: #ef4444;">Lock / Exit</button>
+      </div>
+      <hr style="border-color: #475569; margin: 15px 0;">
+      
+      <!-- Upload Form -->
+      <h3>📤 Upload New Content</h3>
+      <input type="text" id="up-title" placeholder="Content Title">
+      <select id="up-type">
+        <option value="photo">Photo</option>
+        <option value="video">Video</option>
+        <option value="app">App / Doc</option>
+      </select>
+      <input type="text" id="up-url" placeholder="File URL (Google Drive Direct Link)">
+      <label style="display: block; margin: 10px 0; text-align: left;">
+        <input type="checkbox" id="up-is-secret" style="width: auto;"> 18+ Secret Content ဖြစ်ပါသလား?
+      </label>
+      <button onclick="uploadData()" style="background: #10b981;">Upload to Server</button>
+    </div>
+
+    <!-- Secret Display Grid -->
+    <div class="card">
+      <h2>🔒 Hidden 18+ Content</h2>
+      <div id="secret-items" class="grid">No secret items loaded.</div>
+    </div>
+  </div>
+
+  <script>
+    // ======= CONFIGURATION =======
+    const API_URL = "YOUR_GOOGLE_APPS_SCRIPT_URL"; // <-- ဒီနေရာမှာ အပေါ်ကရတဲ့ URL ထည့်ပါ
+    const SECRET_PASS = "1994";
+    // =============================
+
+    let clickCount = 0;
+    let clickTimer = null;
+
+    const secretTrigger = document.getElementById('secret-trigger');
+    const passModal = document.getElementById('pass-modal');
+    const passInput = document.getElementById('pass-input');
+    const passError = document.getElementById('pass-error');
+    const secretVault = document.getElementById('secret-vault');
+
+    // 1. Triple-Click Detection on Title
+    secretTrigger.addEventListener('click', () => {
+      clickCount++;
+      if (clickCount === 1) {
+        clickTimer = setTimeout(() => { clickCount = 0; }, 1500);
+      }
+      if (clickCount === 3) {
+        clearTimeout(clickTimer);
+        clickCount = 0;
+        passInput.value = '';
+        passError.innerText = '';
+        passModal.classList.remove('hidden');
+      }
+    });
+
+    function closeModal() {
+      passModal.classList.add('hidden');
+    }
+
+    function checkPassword() {
+      if (passInput.value.trim() === SECRET_PASS) {
+        passModal.classList.add('hidden');
+        secretVault.classList.remove('hidden');
+        secretVault.scrollIntoView({ behavior: 'smooth' });
+        loadAllData(); // Load secret contents
+      } else {
+        passError.innerText = 'Incorrect Passcode!';
+      }
+    }
+
+    function lockVault() {
+      secretVault.classList.add('hidden');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // 2. Fetch Data from Google Sheet
+    async function loadAllData() {
+      try {
+        let res = await fetch(API_URL);
+        let items = await res.json();
+        
+        let pubPhotos = document.getElementById('public-photos');
+        let pubVideos = document.getElementById('public-videos');
+        let pubApps = document.getElementById('public-apps');
+        let secItems = document.getElementById('secret-items');
+
+        pubPhotos.innerHTML = '';
+        pubVideos.innerHTML = '';
+        pubApps.innerHTML = '';
+        secItems.innerHTML = '';
+
+        items.forEach(item => {
+          let box = document.createElement('div');
+          box.className = 'item-box';
+          
+          if (item.type === 'photo') {
+            box.innerHTML = `<img src="${item.url}" alt="${item.title}"><p>${item.title}</p>`;
+          } else if (item.type === 'video') {
+            box.innerHTML = `<video src="${item.url}" controls></video><p>${item.title}</p>`;
+          } else {
+            box.innerHTML = `<p><b>${item.title}</b></p><a href="${item.url}" target="_blank"><button>Download</button></a>`;
+          }
+
+          // Check if it's secret (18+) or public
+          if (String(item.isSecret).toLowerCase() === 'true') {
+            secItems.appendChild(box);
+          } else {
+            if (item.type === 'photo') pubPhotos.appendChild(box);
+            else if (item.type === 'video') pubVideos.appendChild(box);
+            else pubApps.appendChild(box);
+          }
+        });
+
+      } catch (err) {
+        console.error("Error loading data:", err);
+      }
+    }
+
+    // 3. Upload Data to Google Sheet
+    async function uploadData() {
+      let title = document.getElementById('up-title').value.trim();
+      let type = document.getElementById('up-type').value;
+      let url = document.getElementById('up-url').value.trim();
+      let isSecret = document.getElementById('up-is-secret').checked;
+
+      if (!title || !url) {
+        alert("ကျေးဇူးပြု၍ Title နှင့် URL ထည့်ပါ။");
+        return;
+      }
+
+      let payload = { title, type, url, isSecret };
+
+      alert("Uploading... ခဏစောင့်ပါ။");
+      try {
+        await fetch(API_URL, {
+          method: "POST",
+          body: JSON.stringify(payload)
+        });
+        alert("Upload အောင်မြင်ပါသည်။");
+        document.getElementById('up-title').value = '';
+        document.getElementById('up-url').value = '';
+        document.getElementById('up-is-secret').checked = false;
+        loadAllData();
+      } catch (err) {
+        alert("Upload မအောင်မြင်ပါ: " + err);
+      }
+    }
+
+    // Load Public Data on Page Load
+    window.onload = loadAllData;
+  </script>
+</body>
+</html>
