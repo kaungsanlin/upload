@@ -34,7 +34,7 @@
     /* Grid Items */
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; }
     .item-card { background: #1c2541; border-radius: 16px; overflow: hidden; padding: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
-    .item-card img, .item-card video { width: 100%; height: 200px; object-fit: cover; border-radius: 12px; }
+    .item-card img, .item-card video { width: 100%; height: 200px; object-fit: cover; border-radius: 12px; cursor: pointer; }
     .item-title { font-size: 0.9rem; margin: 10px 0; color: #cbd5e1; word-break: break-all; }
     
     .card-actions { display: flex; gap: 8px; margin-top: 10px; }
@@ -42,14 +42,19 @@
     .btn-view { background: #334155; color: #fff; }
     .btn-download { background: #0284c7; color: #fff; }
 
-    /* Modal & Hidden Sections */
+    /* Modal & Fullscreen Viewer */
     .hidden { display: none !important; }
-    .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+    .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: flex; justify-content: center; align-items: center; z-index: 1000; }
     .modal-content { background: #1c2541; padding: 30px; border-radius: 16px; text-align: center; width: 300px; }
     .modal-content input, .modal-content select { width: 100%; padding: 10px; margin: 8px 0; border-radius: 8px; border: 1px solid #334155; background: #0b132b; color: #fff; box-sizing: border-box; }
     .modal-content button { width: 100%; padding: 10px; background: #0284c7; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 5px; }
     .error { color: #ef4444; font-size: 0.85rem; margin-top: 5px; }
-    
+
+    /* Media Viewer Modal (For Photos/Videos) */
+    .media-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 2000; padding: 20px; box-sizing: border-box; }
+    .media-modal-content { max-width: 100%; max-height: 80vh; border-radius: 12px; object-fit: contain; }
+    .close-media-btn { margin-top: 20px; padding: 10px 25px; background: #ef4444; color: #fff; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; }
+
     .admin-card { border: 2px dashed #0284c7; background: #161f38; padding: 20px; border-radius: 16px; margin-bottom: 25px; }
   </style>
 </head>
@@ -57,7 +62,6 @@
 
   <!-- Header -->
   <header>
-    <!-- Cloud Icon - Tap 5 times to unlock Secret Tab -->
     <div class="logo-icon" id="cloud-trigger" title="Tap 5 times">
       <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM19 18H6c-2.21 0-4-1.79-4-4 0-2.05 1.53-3.76 3.56-3.97l1.07-.11.5-.95C8.08 7.14 9.94 6 12 6c2.62 0 4.88 1.86 5.39 4.43l.3 1.5 1.53.11c1.56.1 2.78 1.41 2.78 2.96 0 1.65-1.35 3-3 3zM8 13h2.55v3h2.9v-3H16l-4-4-4 4z"/></svg>
     </div>
@@ -67,16 +71,17 @@
 
   <main class="container">
     
-    <!-- Admin Upload Panel (Hidden by default, triggered by #admin URL) -->
+    <!-- Admin Upload Panel (Inputs are completely cleared by default) -->
     <div id="admin-panel" class="admin-card hidden">
       <h2 style="color: #38bdf8; margin-top: 0;">🛠️ Admin Upload Panel</h2>
-      <input type="text" id="up-title" placeholder="File Title">
+      <input type="text" id="up-title" placeholder="File Title" value="">
       <select id="up-type">
-        <option value="photo">Photos & Videos</option>
+        <option value="photo">Photos</option>
+        <option value="video">Videos</option>
         <option value="app">Apps</option>
         <option value="other">Others / Docs</option>
       </select>
-      <input type="text" id="up-url" placeholder="File URL (Google Drive Direct Link)">
+      <input type="text" id="up-url" placeholder="File URL (Google Drive Link)" value="">
       <label style="display: block; margin: 10px 0; text-align: left; font-size: 0.9rem;">
         <input type="checkbox" id="up-is-secret" style="width: auto;"> 18+ Secret Content ဖြစ်ပါသလား?
       </label>
@@ -89,24 +94,26 @@
       <button class="tab-btn active" onclick="switchTab('photo', this)">
         🖼️ Photos <span class="tab-badge" id="count-photo">0</span>
       </button>
+      <button class="tab-btn" onclick="switchTab('video', this)">
+        🎬 Videos <span class="tab-badge" id="count-video">0</span>
+      </button>
       <button class="tab-btn" onclick="switchTab('app', this)">
         📱 Apps <span class="tab-badge" id="count-app">0</span>
       </button>
       <button class="tab-btn" onclick="switchTab('other', this)">
         📁 Others <span class="tab-badge" id="count-other">0</span>
       </button>
-      <!-- Secret Tab will appear here after 5 taps & passcode -->
     </div>
 
-    <!-- Search Bar -->
+    <!-- Search Bar (Cleaned, no default text) -->
     <div class="search-box">
       <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-      <input type="text" id="search-input" placeholder="ဖိုင်နာမည်ရှာရန်..." oninput="filterItems()">
+      <input type="text" id="search-input" placeholder="ဖိုင်နာမည်ရှာရန်..." value="" oninput="filterItems()">
     </div>
 
-    <!-- Dynamic Content Display Area -->
+    <!-- Section Header -->
     <div class="section-title">
-      <span id="section-icon">🖼️</span> <span id="section-name">Photos & Videos</span>
+      <span id="section-icon">🖼️</span> <span id="section-name">Photos Collection</span>
     </div>
     
     <div id="content-grid" class="grid">
@@ -115,20 +122,26 @@
 
   </main>
 
-  <!-- Password Modal -->
+  <!-- Password Modal (Password input is clean) -->
   <div id="pass-modal" class="modal hidden">
     <div class="modal-content">
       <h3 id="modal-title" style="margin-top:0;">🔒 Enter Passcode</h3>
-      <input type="password" id="pass-input" placeholder="Passcode">
+      <input type="password" id="pass-input" placeholder="Passcode" value="">
       <button onclick="verifyPassword()">Confirm</button>
       <button onclick="closeModal()" style="background: #334155; margin-top: 8px;">Cancel</button>
       <p id="pass-error" class="error"></p>
     </div>
   </div>
 
+  <!-- Media Fullscreen Viewer Modal -->
+  <div id="media-modal" class="media-modal hidden">
+    <div id="media-container" style="display:flex; justify-content:center; align-items:center; width:100%; height:80vh;"></div>
+    <button class="close-media-btn" onclick="closeMediaModal()">❌ ပြန်ထွက်မည် (Close)</button>
+  </div>
+
   <script>
     // ======= CONFIGURATION =======
-    const API_URL = "https://script.google.com/macros/s/AKfycbzk5GiIOKmTOmcVen0DHJmtIySt8Hzp-kODji38PpFWfAzVDBZQZrTM-U4fmq9DZjRw/exec"; // <-- သင့် Apps Script URL ထည့်ရန်
+    const API_URL = "https://script.google.com/macros/s/AKfycbygD6ifijzHpptfSbsg8oHASQpq_yZ0QMMUcGII4fH60oBKhHjI-j2KzjC5lRuyD7TWBg/exec"; // <-- သင့် Apps Script URL ထည့်ရန်
     const VAULT_PASS = "1994"; // 18+ Vault Password
     const ADMIN_PASS = "5021"; // Admin Upload Password
     // =============================
@@ -148,9 +161,11 @@
     const adminPanel = document.getElementById('admin-panel');
     const cloudTrigger = document.getElementById('cloud-trigger');
     const tabsBar = document.getElementById('tabs-bar');
+    const mediaModal = document.getElementById('media-modal');
+    const mediaContainer = document.getElementById('media-container');
 
-    // Check URL #admin on load
     window.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('search-input').value = ''; // Ensure search is empty
       if (window.location.hash === '#admin') {
         currentMode = 'admin';
         modalTitle.innerText = "🛠️ Admin Authentication";
@@ -159,7 +174,6 @@
       loadAllData();
     });
 
-    // Cloud Icon 5 Taps for Secret Vault
     cloudTrigger.addEventListener('click', () => {
       if (isSecretUnlocked) {
         let secretBtn = document.getElementById('secret-tab-btn');
@@ -211,7 +225,6 @@
 
     function addSecretTab() {
       if (document.getElementById('secret-tab-btn')) return;
-
       let secretCount = allItems.filter(i => String(i.isSecret).toLowerCase() === 'true').length;
 
       let btn = document.createElement('button');
@@ -236,7 +249,10 @@
 
       if (tab === 'photo') {
         document.getElementById('section-icon').innerText = '🖼️';
-        document.getElementById('section-name').innerText = 'Photos & Videos';
+        document.getElementById('section-name').innerText = 'Photos Collection';
+      } else if (tab === 'video') {
+        document.getElementById('section-icon').innerText = '🎬';
+        document.getElementById('section-name').innerText = 'Videos Collection';
       } else if (tab === 'app') {
         document.getElementById('section-icon').innerText = '📱';
         document.getElementById('section-name').innerText = 'Applications';
@@ -263,10 +279,12 @@
 
     function updateCounts() {
       let pCount = allItems.filter(i => i.type === 'photo' && String(i.isSecret).toLowerCase() !== 'true').length;
+      let vCount = allItems.filter(i => i.type === 'video' && String(i.isSecret).toLowerCase() !== 'true').length;
       let aCount = allItems.filter(i => i.type === 'app' && String(i.isSecret).toLowerCase() !== 'true').length;
       let oCount = allItems.filter(i => i.type === 'other' && String(i.isSecret).toLowerCase() !== 'true').length;
 
       document.getElementById('count-photo').innerText = pCount;
+      document.getElementById('count-video').innerText = vCount;
       document.getElementById('count-app').innerText = aCount;
       document.getElementById('count-other').innerText = oCount;
 
@@ -275,6 +293,17 @@
         let sCount = allItems.filter(i => String(i.isSecret).toLowerCase() === 'true').length;
         secretBtn.innerHTML = `🔥 Secret <span class="tab-badge">${sCount}</span>`;
       }
+    }
+
+    // Helper to get direct download URL for Google Drive links
+    function getDownloadUrl(url) {
+      if (url.includes('drive.google.com') && url.includes('/d/')) {
+        let match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+        if (match && match[1]) {
+          return `https://drive.google.com/uc?export=download&id=${match[1]}`;
+        }
+      }
+      return url;
     }
 
     function renderItems() {
@@ -305,14 +334,24 @@
       filtered.forEach(item => {
         let card = document.createElement('div');
         card.className = 'item-card';
+        let downloadLink = getDownloadUrl(item.url);
 
         if (item.type === 'photo' || currentTab === 'secret') {
           card.innerHTML = `
-            <img src="${item.url}" alt="${item.title}">
+            <img src="${item.url}" alt="${item.title}" onclick="openMediaViewer('photo', '${item.url}')">
             <p class="item-title">${item.title}</p>
             <div class="card-actions">
-              <a href="${item.url}" target="_blank" class="action-btn btn-view">👁️ ကြည့်မည်</a>
-              <a href="${item.url}" target="_blank" class="action-btn btn-download">⬇️ Download</a>
+              <button onclick="openMediaViewer('photo', '${item.url}')" class="action-btn btn-view">👁️ ကြည့်မည်</button>
+              <a href="${downloadLink}" target="_blank" class="action-btn btn-download">⬇️ Download</a>
+            </div>
+          `;
+        } else if (item.type === 'video') {
+          card.innerHTML = `
+            <video src="${item.url}" controls onclick="openMediaViewer('video', '${item.url}')" style="background:#000;"></video>
+            <p class="item-title">${item.title}</p>
+            <div class="card-actions">
+              <button onclick="openMediaViewer('video', '${item.url}')" class="action-btn btn-view">🎬 ဖွင့်ကြည့်မည်</button>
+              <a href="${downloadLink}" target="_blank" class="action-btn btn-download">⬇️ Download</a>
             </div>
           `;
         } else {
@@ -320,12 +359,27 @@
             <div style="background:#0b132b; height:100px; display:flex; align-items:center; justify-content:center; border-radius:10px; font-size:2rem;">📦</div>
             <p class="item-title"><b>${item.title}</b></p>
             <div class="card-actions">
-              <a href="${item.url}" target="_blank" class="action-btn btn-download" style="width:100%;">⬇️ Download ဖိုင်ဆွဲမည်</a>
+              <a href="${downloadLink}" target="_blank" class="action-btn btn-download" style="width:100%;">⬇️ Download ဖိုင်ဆွဲမည်</a>
             </div>
           `;
         }
         grid.appendChild(card);
       });
+    }
+
+    function openMediaViewer(type, url) {
+      mediaContainer.innerHTML = '';
+      if (type === 'photo') {
+        mediaContainer.innerHTML = `<img src="${url}" class="media-modal-content">`;
+      } else if (type === 'video') {
+        mediaContainer.innerHTML = `<video src="${url}" controls autoplay class="media-modal-content"></video>`;
+      }
+      mediaModal.classList.remove('hidden');
+    }
+
+    function closeMediaModal() {
+      mediaContainer.innerHTML = '';
+      mediaModal.classList.add('hidden');
     }
 
     function filterItems() {
