@@ -81,7 +81,7 @@
         <option value="app">Apps</option>
         <option value="other">Others / Docs</option>
       </select>
-      <input type="text" id="up-url" placeholder="File URL (Catbox Direct Link)" value="">
+      <input type="text" id="up-url" placeholder="Telegram File URL" value="">
       <label style="display: block; margin: 10px 0; text-align: left; font-size: 0.9rem;">
         <input type="checkbox" id="up-is-secret" style="width: auto;"> 18+ Secret Content ဖြစ်ပါသလား?
       </label>
@@ -295,18 +295,6 @@
       }
     }
 
-    // Force browser direct download using HTML5 download attribute & blob fetch fallback
-    function downloadFile(event, url, filename) {
-      event.preventDefault();
-      let a = document.createElement('a');
-      a.href = url;
-      a.download = filename || 'download';
-      a.target = '_blank';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    }
-
     function renderItems() {
       let grid = document.getElementById('content-grid');
       grid.innerHTML = '';
@@ -335,7 +323,6 @@
       filtered.forEach(item => {
         let card = document.createElement('div');
         card.className = 'item-card';
-        let safeTitle = item.title.replace(/'/g, "");
 
         if (item.type === 'photo' || currentTab === 'secret') {
           card.innerHTML = `
@@ -343,7 +330,7 @@
             <p class="item-title">${item.title}</p>
             <div class="card-actions">
               <button onclick="openMediaViewer('photo', '${item.url}')" class="action-btn btn-view">👁️ ကြည့်မည်</button>
-              <button onclick="downloadFile(event, '${item.url}', '${safeTitle}')" class="action-btn btn-download">⬇️ Download</button>
+              <a href="${item.url}" target="_blank" class="action-btn btn-download">⬇️ Download</a>
             </div>
           `;
         } else if (item.type === 'video') {
@@ -352,7 +339,7 @@
             <p class="item-title">${item.title}</p>
             <div class="card-actions">
               <button onclick="openMediaViewer('video', '${item.url}')" class="action-btn btn-view">🎬 ဖွင့်ကြည့်မည်</button>
-              <button onclick="downloadFile(event, '${item.url}', '${safeTitle}.mp4')" class="action-btn btn-download">⬇️ Download</button>
+              <a href="${item.url}" target="_blank" class="action-btn btn-download">⬇️ Download</a>
             </div>
           `;
         } else {
@@ -360,7 +347,7 @@
             <div style="background:#0b132b; height:100px; display:flex; align-items:center; justify-content:center; border-radius:10px; font-size:2rem;">📦</div>
             <p class="item-title"><b>${item.title}</b></p>
             <div class="card-actions">
-              <button onclick="downloadFile(event, '${item.url}', '${safeTitle}')" class="action-btn btn-download" style="width:100%;">⬇️ Download ဖိုင်ဆွဲမည်</button>
+              <a href="${item.url}" target="_blank" class="action-btn btn-download" style="width:100%;">⬇️ Download ဖိုင်ဆွဲမည်</a>
             </div>
           `;
         }
