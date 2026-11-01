@@ -81,7 +81,7 @@
         <option value="app">Apps</option>
         <option value="other">Others / Docs</option>
       </select>
-      <input type="text" id="up-url" placeholder="File URL (Google Drive Direct Download Link)" value="">
+      <input type="text" id="up-url" placeholder="File URL (Direct Link)" value="">
       <label style="display: block; margin: 10px 0; text-align: left; font-size: 0.9rem;">
         <input type="checkbox" id="up-is-secret" style="width: auto;"> 18+ Secret Content ဖြစ်ပါသလား?
       </label>
@@ -295,16 +295,6 @@
       }
     }
 
-    function getDownloadUrl(url) {
-      if (url.includes('drive.google.com') && url.includes('/d/')) {
-        let match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
-        if (match && match[1]) {
-          return `https://drive.google.com/uc?export=download&id=${match[1]}`;
-        }
-      }
-      return url;
-    }
-
     function renderItems() {
       let grid = document.getElementById('content-grid');
       grid.innerHTML = '';
@@ -333,7 +323,6 @@
       filtered.forEach(item => {
         let card = document.createElement('div');
         card.className = 'item-card';
-        let downloadLink = getDownloadUrl(item.url);
 
         if (item.type === 'photo' || currentTab === 'secret') {
           card.innerHTML = `
@@ -341,18 +330,16 @@
             <p class="item-title">${item.title}</p>
             <div class="card-actions">
               <button onclick="openMediaViewer('photo', '${item.url}')" class="action-btn btn-view">👁️ ကြည့်မည်</button>
-              <a href="${downloadLink}" target="_blank" class="action-btn btn-download">⬇️ Download</a>
+              <a href="${item.url}" target="_blank" class="action-btn btn-download">⬇️ Download</a>
             </div>
           `;
         } else if (item.type === 'video') {
           card.innerHTML = `
-            <video preload="metadata" onclick="openMediaViewer('video', '${item.url}')">
-              <source src="${downloadLink}" type="video/mp4">
-            </video>
+            <video src="${item.url}" preload="metadata" playsinline onclick="openMediaViewer('video', '${item.url}')"></video>
             <p class="item-title">${item.title}</p>
             <div class="card-actions">
               <button onclick="openMediaViewer('video', '${item.url}')" class="action-btn btn-view">🎬 ဖွင့်ကြည့်မည်</button>
-              <a href="${downloadLink}" target="_blank" class="action-btn btn-download">⬇️ Download</a>
+              <a href="${item.url}" target="_blank" class="action-btn btn-download">⬇️ Download</a>
             </div>
           `;
         } else {
@@ -360,7 +347,7 @@
             <div style="background:#0b132b; height:100px; display:flex; align-items:center; justify-content:center; border-radius:10px; font-size:2rem;">📦</div>
             <p class="item-title"><b>${item.title}</b></p>
             <div class="card-actions">
-              <a href="${downloadLink}" target="_blank" class="action-btn btn-download" style="width:100%;">⬇️ Download ဖိုင်ဆွဲမည်</a>
+              <a href="${item.url}" target="_blank" class="action-btn btn-download" style="width:100%;">⬇️ Download ဖိုင်ဆွဲမည်</a>
             </div>
           `;
         }
@@ -370,11 +357,10 @@
 
     function openMediaViewer(type, url) {
       mediaContainer.innerHTML = '';
-      let directUrl = getDownloadUrl(url);
       if (type === 'photo') {
         mediaContainer.innerHTML = `<img src="${url}" class="media-modal-content">`;
       } else if (type === 'video') {
-        mediaContainer.innerHTML = `<video src="${directUrl}" controls autoplay class="media-modal-content"></video>`;
+        mediaContainer.innerHTML = `<video src="${url}" controls autoplay playsinline class="media-modal-content"></video>`;
       }
       mediaModal.classList.remove('hidden');
     }
